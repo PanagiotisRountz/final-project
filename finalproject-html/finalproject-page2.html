@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Evolutions</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <h1>Your Pokémon and Its Evolutions</h1>
+    <div class="pokemon-container" id="pokemonContainer"></div>
+    <div id="congrats" class="congrats-message"></div>
+    <div class="confirm-buttons" id="confirmButtons" style="display: none;">
+        <button class="choose-again" id="chooseAgainButton">Choose Another Pokémon</button>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pokemonIdentifier = urlParams.get('identifier');
+            if (!pokemonIdentifier) {
+                alert('No Pokémon identifier provided.');
+                return;
+            }
+
+            fetch(`http://127.0.0.1:5000/getEvolutions?identifier=${pokemonIdentifier}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('pokemonContainer');
+                    data.forEach(pokemon => {
+                        const pokemonDiv = document.createElement('div');
+                        pokemonDiv.id = pokemon.name.toLowerCase();
+                        pokemonDiv.classList.add('pokemon');
+
+                        pokemonDiv.innerHTML = `
+                            <img src="${pokemon.image}" alt="${pokemon.name}">
+                            <h2>${pokemon.name}</h2>
+                            <div class="description">${pokemon.description || ''}</div>
+                        `;
+                        
+                        container.appendChild(pokemonDiv);
+
+                        pokemonDiv.addEventListener('click', function() {
+                            showDescription(pokemon.name, pokemon.description || 'No description available.');
+                        });
+                    });
+                    startTextAnimation();
+                })
+                .catch(error => console.error('Error fetching Pokémon data:', error));
+        });
+
+        let congratsMessage = document.getElementById('congrats');
+        let confirmButtons = document.getElementById('confirmButtons');
+
+        function showDescription(pokemon, description) {
+            document.querySelectorAll('.description').forEach(desc => {
+                desc.style.display = 'none';
+            });
+
+            let selectedDesc = document.getElementById(pokemon.toLowerCase()).getElementsByClassName('description')[0];
+            selectedDesc.innerHTML = "<strong>" + pokemon + ":</strong> " + description;
+            selectedDesc.style.display = 'block';
+        }
+
+        function typeWriter(text, i, fnCallback) {
+            if (i < text.length) {
+                congratsMessage.innerHTML = text.substring(0, i + 1) +'<span aria-hidden="true"></span>';
+                setTimeout(function() {
+                    typeWriter(text, i + 1, fnCallback)
+                }, 50);
+            } else if (typeof fnCallback == 'function') {
+                setTimeout(fnCallback, 700);
+            }
+        }
+
+        function startTextAnimation() {
+            congratsMessage.style.display = 'block';
+            typeWriter("Here are the evolutions of your Pokémon partner! 🎉", 0, function() {
+                
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+                confirmButtons.style.display = 'flex';
+            });
+        }
+
+        document.getElementById('chooseAgainButton').addEventListener('click', function() {
+            window.location.href = 'finalproject-page1.html';
+        });
+    </script>
+</body>
+</html>
+

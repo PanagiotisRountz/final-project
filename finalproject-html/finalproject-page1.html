@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Starter Selection</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.3.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <h1>Choose Your Starter Pokémon!</h1>
+    <div class="pokemon-container" id="pokemonContainer"></div>
+    <div id="congrats" class="congrats-message"></div>
+    <button id="confirmButton" class="confirm-button">Confirm Pokémon Choice</button>
+    <div class="confirm-buttons" id="confirmButtons" style="display: none;">
+        <button class="continue" id="continueButton">Continue</button>
+        <button class="choose-again" id="chooseAgainButton">Choose Again</button>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded event fired');
+            fetch('http://127.0.0.1:5000/getPokemonData')
+                .then(response => {
+                    console.log('Fetching data from server');
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Data fetched:', data);
+                    const container = document.getElementById('pokemonContainer');
+                    data.forEach(pokemon => {
+                        const pokemonDiv = document.createElement('div');
+                        pokemonDiv.id = pokemon.name.toLowerCase();
+                        pokemonDiv.classList.add('pokemon');
+                        
+                        pokemonDiv.innerHTML = `
+                            <img src="${pokemon.image}" alt="${pokemon.name}">
+                            <h2>${pokemon.name}</h2>
+                            <div class="type ${pokemon.type.toLowerCase()}">${pokemon.type}</div>
+                            <div class="description">${pokemon.description || ''}</div>
+                            <div class="hidden identifier">Identifier: ${pokemon.identifier}</div>
+                            <div class="hidden stage">Stage: ${pokemon.stage}</div>
+                        `;
+                        
+                        container.appendChild(pokemonDiv);
+
+                        pokemonDiv.addEventListener('click', function() {
+                            showDescription(pokemon.name, pokemon.description || 'No description available.');
+                            confirmButton.style.display = 'block';
+                        });
+                    });
+                })
+                .catch(error => console.error('Error fetching Pokémon data:', error));
+        });
+
+        let selected = false;
+        let selectedPokemon = '';
+        let selectedPokemonIdentifier = '';
+        let congratsMessage = document.getElementById('congrats');
+        let confirmButtons = document.getElementById('confirmButtons');
+        let confirmButton = document.getElementById('confirmButton');
+
+        function showDescription(pokemon, description) {
+            document.querySelectorAll('.description').forEach(desc => {
+                desc.style.display = 'none';
+            });
+
+            let selectedDesc = document.getElementById(pokemon.toLowerCase()).getElementsByClassName('description')[0];
+            selectedDesc.innerHTML = "<strong>" + pokemon + ":</strong> " + description;
+            selectedDesc.style.display = 'block';
+            selectedPokemon = pokemon;
+            selectedPokemonIdentifier = document.getElementById(pokemon.toLowerCase()).getElementsByClassName('identifier')[0].innerText.split(': ')[1];
+        }
+
+        function typeWriter(text, i, fnCallback) {
+            if (i < text.length) {
+                congratsMessage.innerHTML = text.substring(0, i + 1) +'<span aria-hidden="true"></span>';
+                setTimeout(function() {
+                    typeWriter(text, i + 1, fnCallback)
+                }, 50);
+            } else if (typeof fnCallback == 'function') {
+                setTimeout(fnCallback, 700);
+            }
+        }
+
+        function startTextAnimation() {
+            congratsMessage.style.display = 'block';
+            typeWriter("Congratulations, " + selectedPokemon + " is your first Pokémon partner! 🎉", 0, function() {
+                
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+                confirmButtons.style.display = 'flex';
+            });
+        }
+
+        confirmButton.addEventListener('click', function() {
+            if (!selected) {
+                confirmButton.style.display = 'none';
+                startTextAnimation();
+            }
+        });
+
+        document.getElementById('continueButton').addEventListener('click', function() {
+            window.location.href = 'finalproject-page2.html?identifier=' + encodeURIComponent(selectedPokemonIdentifier);
+        });
+
+        document.getElementById('chooseAgainButton').addEventListener('click', function() {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
